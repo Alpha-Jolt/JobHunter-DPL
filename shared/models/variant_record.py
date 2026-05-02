@@ -25,6 +25,9 @@ class VariantRecord:
         master_resume_id: UUID of the source resume used.
         pdf_key: S3 key for the PDF version.
         docx_key: S3 key for the DOCX version.
+        cover_letter_key: S3 key for the cover letter PDF.
+        local_pdf_path: Fallback local path if S3 upload failed.
+        s3_upload_failed: True if S3 upload failed and local fallback is used.
         curated_json: AI-curated resume data structure.
         gaps_identified: Skills the user lacks but the job requires.
         approval_status: Current approval state.
@@ -44,6 +47,9 @@ class VariantRecord:
     master_resume_id: uuid.UUID
     pdf_key: str
     docx_key: str
+    cover_letter_key: str = ""
+    local_pdf_path: str = ""
+    s3_upload_failed: bool = False
     curated_json: dict
     gaps_identified: list = field(default_factory=list)
     approval_status: ApprovalStatusType = "pending"
@@ -103,6 +109,9 @@ class VariantRecord:
             "master_resume_id": str(self.master_resume_id),
             "pdf_key": self.pdf_key,
             "docx_key": self.docx_key,
+            "cover_letter_key": self.cover_letter_key,
+            "local_pdf_path": self.local_pdf_path,
+            "s3_upload_failed": self.s3_upload_failed,
             "curated_json": self.curated_json,
             "gaps_identified": list(self.gaps_identified),
             "approval_status": self.approval_status,
@@ -154,6 +163,9 @@ class VariantRecord:
                 master_resume_id=_to_uuid("master_resume_id"),
                 pdf_key=data.get("pdf_key", ""),
                 docx_key=data.get("docx_key", ""),
+                cover_letter_key=data.get("cover_letter_key", ""),
+                local_pdf_path=data.get("local_pdf_path", ""),
+                s3_upload_failed=data.get("s3_upload_failed", False),
                 curated_json=data.get("curated_json") or {},
                 gaps_identified=list(data.get("gaps_identified") or []),
                 approval_status=data.get("approval_status", "pending"),
