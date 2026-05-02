@@ -75,7 +75,9 @@ Immutable (`frozen=True`) dataclass representing one scraped job listing.
 
 Mutable dataclass representing an AI-generated resume variant awaiting user approval.
 
-Key fields: `variant_id`, `user_id`, `job_id`, `master_resume_id`, `pdf_key`, `docx_key`, `curated_json`, `gaps_identified`, `approval_status` (`"pending"` / `"approved"` / `"rejected"`), `approval_token`, `approved_at`, `prompt_version`.
+Key fields: `variant_id`, `user_id`, `job_id`, `master_resume_id`, `pdf_key`, `docx_key`, `cover_letter_key`, `local_pdf_path`, `s3_upload_failed`, `curated_json`, `gaps_identified`, `approval_status` (`"pending"` / `"approved"` / `"rejected"`), `approval_token`, `approved_at`, `prompt_version`.
+
+**S3 fields:** `pdf_key` / `docx_key` / `cover_letter_key` hold MinIO object keys after upload. `local_pdf_path` is the fallback local path when upload fails. `s3_upload_failed` is `True` when the upload failed and the local path is in use.
 
 **Methods:** `from_dict(data)`, `to_dict()`, `validate()`, `is_approved()`, `is_pending()`
 
@@ -215,6 +217,10 @@ await registry.save(job_records)  # called automatically by the pipeline
 Reads `"raw"` jobs from `JobRegistry` via `registry_reader.py`, generates variants,
 and saves them to `VariantRegistry` via `SharedVariantRegistry` adapter.
 Enable with `USE_SHARED_REGISTRY=true` in `ai_engine/.env`.
+
+After `OutputBuilder` renders files, it uploads them to MinIO S3 and stores the resulting
+object keys (`pdf_key`, `docx_key`, `cover_letter_key`) on the saved `VariantRecord`.
+If MinIO is unavailable, `s3_upload_failed=True` and `local_pdf_path` is used as fallback.
 
 ### Mail Engine → VariantRegistry + ApplicationLog _(Phase 0+)_
 
