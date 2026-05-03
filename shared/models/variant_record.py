@@ -50,7 +50,7 @@ class VariantRecord:
     cover_letter_key: str = ""
     local_pdf_path: str = ""
     s3_upload_failed: bool = False
-    curated_json: dict
+    curated_json: dict = field(default_factory=dict)
     gaps_identified: list = field(default_factory=list)
     approval_status: ApprovalStatusType = "pending"
     approval_token: Optional[str] = None
