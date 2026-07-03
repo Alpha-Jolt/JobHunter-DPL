@@ -1,37 +1,37 @@
-# shared/pyproject.toml
-
-[build-system]
-requires = ["setuptools>=68.0", "wheel"]
-build-backend = "setuptools.build_meta"
-
-[project]
-name = "jobhunter-dpl"
-version = "0.1.0"
-description = "JobHunter — Data Persistence Layer"
-readme = "README.md"
-license = {text = "MIT"}
-requires-python = ">=3.10"
-keywords = ["jobhunter", "data-layer", "async", "registries"]
-
-# shared itself has NO runtime dependencies (only stdlib + typing)
-# If you add psycopg2 / asyncpg later for PostgreSQL, add them here.
-dependencies = []
-
-[project.optional-dependencies]
-dev = [
-    "pytest>=8.3.5",
-    "pytest-asyncio>=0.24.0",
-    "pytest-cov>=5.0.0",
-]
-
-[tool.setuptools.packages.find]
-where = ["."]          # ← look inside THIS directory (not ..)
-include = ["shared*"]  # ← pick up shared/ and shared.* sub-packages
-
-[tool.pytest.ini_options]
-asyncio_mode = "auto"
-testpaths = ["tests"]
-python_files = ["test_*.py"]
-python_classes = ["Test*"]
-python_functions = ["test_*"]
-addopts = "--cov=shared --cov-report=term-missing --cov-fail-under=80"
+# shared/pyproject.toml
+
+[build-system]
+requires = ["setuptools>=68.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "jobhunter-dpl"
+version = "0.3.0"
+description = "JobHunter — Data Persistence Layer"
+readme = "README.md"
+license = {text = "MIT"}
+requires-python = ">=3.10"
+keywords = ["jobhunter", "data-layer", "async", "registries"]
+
+# shared itself has NO runtime dependencies (only stdlib + typing)
+# If you add psycopg2 / asyncpg later for PostgreSQL, add them here.
+dependencies = []
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.5",
+    "pytest-asyncio>=0.24.0",
+    "pytest-cov>=5.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["."]          # ← look inside THIS directory (not ..)
+include = ["shared*"]  # ← pick up shared/ and shared.* sub-packages
+
+[tool.pytest.ini_options]
+asyncio_mode = "auto"
+testpaths = ["tests"]
+python_files = ["test_*.py"]
+python_classes = ["Test*"]
+python_functions = ["test_*"]
+addopts = "--cov=shared --cov-report=term-missing --cov-fail-under=80"

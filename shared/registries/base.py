@@ -317,3 +317,292 @@ class ApplicationLogBase(ABC):
         Returns:
             Integer count of applications for that user.
         """
+
+
+# ── Company & CareerJobs registry interfaces ──────────────────────────────────
+
+from shared.models.company_record import CompanyRecord  # noqa: E402
+from shared.models.career_job_record import CareerJobRecord  # noqa: E402
+from typing import Dict, Set  # noqa: E402 — re-import for clarity in this section
+
+
+class CompanyRegistryBase(ABC):
+    """Interface for all CompanyRecord storage backends."""
+
+    @abstractmethod
+    async def save(self, company: CompanyRecord) -> None:
+        """Persist a single company record (upsert on apex_domain).
+
+        Args:
+            company: CompanyRecord instance to save.
+        """
+
+    @abstractmethod
+    async def save_many(self, companies: List[CompanyRecord]) -> None:
+        """Persist a list of company records (upsert on apex_domain).
+
+        Args:
+            companies: List of CompanyRecord instances to save.
+        """
+
+    @abstractmethod
+    async def get(self, company_id: uuid.UUID) -> CompanyRecord:
+        """Retrieve a single company by UUID.
+
+        Args:
+            company_id: UUID of the company.
+
+        Returns:
+            The matching CompanyRecord.
+
+        Raises:
+            KeyError: If no company with that ID exists.
+        """
+
+    @abstractmethod
+    async def get_by_apex_domain(self, apex_domain: str) -> Optional[CompanyRecord]:
+        """Return the company record for a given apex domain, or None.
+
+        Args:
+            apex_domain: Normalised apex domain string (e.g. ``acme.com``).
+
+        Returns:
+            CompanyRecord if found, None otherwise.
+        """
+
+    @abstractmethod
+    async def get_by_crawl_status(self, status: str) -> List[CompanyRecord]:
+        """Return all companies with the given crawl_status.
+
+        Args:
+            status: One of ``pending``, ``enriched``, ``failed``,
+                ``robots_blocked``, ``access_denied``, ``name_only``.
+
+        Returns:
+            List of matching CompanyRecord instances.
+        """
+
+    @abstractmethod
+    async def get_pending_email_refresh(self, older_than_days: int = 30) -> List[CompanyRecord]:
+        """Return enriched companies whose email data is stale.
+
+        Args:
+            older_than_days: Include companies not crawled for at least this
+                many days (default 30).
+
+        Returns:
+            List of CompanyRecord instances due for email refresh.
+        """
+
+    @abstractmethod
+    async def apex_domain_exists(self, apex_domain: str) -> bool:
+        """Check whether an apex domain is already in the registry.
+
+        Args:
+            apex_domain: Normalised apex domain string.
+
+        Returns:
+            True if the domain exists, False otherwise.
+        """
+
+    @abstractmethod
+    async def get_known_domains_set(self) -> Set[str]:
+        """Return a set of all known apex domains for queue-level dedup.
+
+        Returns:
+            Set of apex domain strings currently in the registry.
+        """
+
+    @abstractmethod
+    async def update_crawl_status(self, company_id: uuid.UUID, status: str) -> None:
+        """Update the crawl_status of a company record.
+
+        Args:
+            company_id: UUID of the company.
+            status: New crawl_status value.
+        """
+
+    @abstractmethod
+    async def update_enrichment(self, company_id: uuid.UUID, **fields) -> None:
+        """Partial-update enrichment fields on an existing company record.
+
+        Only the provided keyword argument fields are updated.
+        None values are ignored — they do not overwrite existing data.
+
+        Args:
+            company_id: UUID of the company to update.
+            **fields: Field name/value pairs to update.
+        """
+
+    @abstractmethod
+    async def count(self) -> int:
+        """Return the total number of stored company records.
+
+        Returns:
+            Integer count of all companies.
+        """
+
+    @abstractmethod
+    async def count_by_crawl_status(self) -> Dict[str, int]:
+        """Return a breakdown of company counts by crawl_status.
+
+        Returns:
+            Dictionary mapping status string to count.
+        """
+
+    @abstractmethod
+    async def count_by_ats_platform(self) -> Dict[str, int]:
+        """Return a breakdown of company counts by detected ATS platform.
+
+        Returns:
+            Dictionary mapping ats_platform string to count.
+        """
+
+
+class CareerJobsRegistryBase(ABC):
+    """Interface for all CareerJobRecord storage backends."""
+
+    @abstractmethod
+    async def save(self, job: CareerJobRecord) -> None:
+        """Persist a single career job record (upsert on company_id + url_hash).
+
+        Args:
+            job: CareerJobRecord instance to save.
+        """
+
+    @abstractmethod
+    async def save_many(self, jobs: List[CareerJobRecord]) -> None:
+        """Persist a list of career job records (upsert on company_id + url_hash).
+
+        Args:
+            jobs: List of CareerJobRecord instances to save.
+        """
+
+    @abstractmethod
+    async def get(self, career_job_id: uuid.UUID) -> CareerJobRecord:
+        """Retrieve a single career job by UUID.
+
+        Args:
+            career_job_id: UUID of the career job.
+
+        Returns:
+            The matching CareerJobRecord.
+
+        Raises:
+            KeyError: If no record with that ID exists.
+        """
+
+    @abstractmethod
+    async def get_by_company(self, company_id: uuid.UUID) -> List[CareerJobRecord]:
+        """Return all career jobs for a given company.
+
+        Args:
+            company_id: UUID of the parent company.
+
+        Returns:
+            List of CareerJobRecord instances for that company.
+        """
+
+    @abstractmethod
+    async def get_active(self, limit: int = 100, offset: int = 0) -> List[CareerJobRecord]:
+        """Return active career jobs ordered by last_seen_at DESC.
+
+        Args:
+            limit: Maximum number of records to return.
+            offset: Number of records to skip.
+
+        Returns:
+            List of active CareerJobRecord instances.
+        """
+
+    @abstractmethod
+    async def url_hash_exists(self, company_id: uuid.UUID, url_hash: str) -> bool:
+        """Check whether a (company_id, url_hash) pair already exists.
+
+        Args:
+            company_id: UUID of the parent company.
+            url_hash: MD5 of the normalised job URL.
+
+        Returns:
+            True if the record exists, False otherwise.
+        """
+
+    @abstractmethod
+    async def get_content_hash(
+        self, company_id: uuid.UUID, url_hash: str
+    ) -> Optional[str]:
+        """Return the stored content_hash for a job without loading the full record.
+
+        Args:
+            company_id: UUID of the parent company.
+            url_hash: MD5 of the normalised job URL.
+
+        Returns:
+            The stored content_hash string, or None if no record exists.
+        """
+
+    @abstractmethod
+    async def update_last_seen(self, career_job_id: uuid.UUID) -> None:
+        """Update last_seen_at to now for an unchanged job.
+
+        Args:
+            career_job_id: UUID of the career job.
+        """
+
+    @abstractmethod
+    async def update_content(self, career_job_id: uuid.UUID, **fields) -> None:
+        """Update content fields on a changed job record.
+
+        Args:
+            career_job_id: UUID of the career job to update.
+            **fields: Field name/value pairs to update.
+        """
+
+    @abstractmethod
+    async def mark_closed(self, career_job_id: uuid.UUID) -> None:
+        """Set status to ``closed`` for a job no longer found on the career page.
+
+        Args:
+            career_job_id: UUID of the career job.
+        """
+
+    @abstractmethod
+    async def mark_missing_jobs_closed(
+        self, company_id: uuid.UUID, seen_url_hashes: Set[str]
+    ) -> int:
+        """After a crawl pass, close all jobs whose URL hash was not seen.
+
+        Args:
+            company_id: UUID of the company that was just crawled.
+            seen_url_hashes: Set of url_hash values observed in the latest crawl.
+
+        Returns:
+            Number of records marked closed.
+        """
+
+    @abstractmethod
+    async def count(self) -> int:
+        """Return total number of career job records.
+
+        Returns:
+            Integer count.
+        """
+
+    @abstractmethod
+    async def count_by_company(self, company_id: uuid.UUID) -> int:
+        """Count career jobs for a specific company.
+
+        Args:
+            company_id: UUID of the company.
+
+        Returns:
+            Integer count.
+        """
+
+    @abstractmethod
+    async def count_active_by_company(self) -> Dict[str, int]:
+        """Return active job counts keyed by company_id string.
+
+        Returns:
+            Dictionary mapping company_id (str) to active job count.
+        """

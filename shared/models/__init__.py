@@ -1,6 +1,8 @@
 """Models package for the shared data persistence layer."""
 
 from shared.models.application_record import ApplicationRecord
+from shared.models.career_job_record import CareerJobRecord
+from shared.models.company_record import CompanyRecord
 from shared.models.exceptions import (
     ApplicationNotFoundError,
     ApprovalRequiredError,
@@ -17,6 +19,8 @@ __all__ = [
     "JobRecord",
     "VariantRecord",
     "ApplicationRecord",
+    "CompanyRecord",
+    "CareerJobRecord",
     "SharedLayerError",
     "RegistryError",
     "JobNotFoundError",
